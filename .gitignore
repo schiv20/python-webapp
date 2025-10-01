@@ -5,3 +5,4 @@ scan.bat
 .venv
 .scannerwork
 coverage.xml
+.env

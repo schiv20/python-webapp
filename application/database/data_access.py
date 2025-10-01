@@ -1,8 +1,15 @@
+from dotenv import load_dotenv
+import os
 import pymysql
 
-mydb = pymysql.connect(
+load_dotenv()
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_DATABASE = os.getenv("DB_DBNAME")
 
-    host="localhost",
-    user="root",
-    database="jokeapp"
+conn = pymysql.connect(
+    host=DB_HOST,
+    user=DB_USER,
+    database=DB_DATABASE
 )
+
