@@ -1,15 +1,37 @@
 from dotenv import load_dotenv
 import os
 import pymysql
+import random
 
-load_dotenv()
-DB_HOST = os.getenv("DB_HOST")
-DB_USER = os.getenv("DB_USER")
-DB_DATABASE = os.getenv("DB_DBNAME")
+class DataAccess:
 
-conn = pymysql.connect(
-    host=DB_HOST,
-    user=DB_USER,
-    database=DB_DATABASE
-)
+    load_dotenv()
+    DB_HOST = os.getenv("DB_HOST")
+    DB_USER = os.getenv("DB_USER")
+    DB_DATABASE = os.getenv("DB_NAME")
 
+    conn = pymysql.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        database=DB_DATABASE
+    )
+
+    def get_num_of_jokes(self):
+        with self.conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM joke")
+            return cursor.fetchone()[0]
+
+    def get_joke(self) :
+        # pick by OFFSET, not by ID (avoids gaps)
+        total = self.get_num_of_jokes()
+        if total == 0:
+            return None
+        random_joke = random.randint(0, total - 1)
+        with self.conn.cursor() as cursor:
+            cursor.execute("SELECT the_joke, punchline FROM joke WHERE ID = %s", (random_joke,))
+            return cursor.fetchone()
+
+if __name__ == "__main__":
+    da = DataAccess()
+    row = da.get_joke()
+    print(row)
