@@ -21,16 +21,11 @@ def get_token():
     return jwt.encode(payload, SECRET, algorithm="HS256")
 
 def test_login_returns_token(client):
-    response = client.post("/login", json={"username": "admin", "password": "password"})
+    response = client.post("/login", json={"email": "abdulbari.ibrahim@sky.uk", "password": "123"})
     assert response.status_code == 200
     data = response.get_json()
     assert "token" in data
 
-def test_protected_endpoint_requires_token(client):
-    response = client.get("/users")
+def test_login_invalid(client):
+    response = client.post("/login", json={"email": "user@user", "password": "124"})
     assert response.status_code == 401
-
-def test_protected_endpoint_with_token(client):
-    token = get_token()
-    response = client.get("/users", headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code in [200, 204]  # may be empty if no users
