@@ -1,3 +1,4 @@
+import bcrypt
 from dotenv import load_dotenv
 import os
 import pymysql
@@ -38,4 +39,27 @@ class DataAccess:
                 (email, password)
             )
             self.conn.commit()
+
+    def get_user_by_email(self, email):
+        with self.conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM user WHERE Email = %s", (email,))
+            return cursor.fetchone()
+
+    def verify_user(self, email, password):
+        print("Verifying user in data access")
+        print(email, password)
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute("SELECT Password FROM user WHERE Email = %s", (email,))
+                user = cursor.fetchone()
+                print(user)
+                if not user:
+                    return False
+
+                stored_hash = user[0]
+                print(stored_hash)
+                # bcrypt expects bytes
+                return bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8"))
+        finally:
+            self.conn.close()
 

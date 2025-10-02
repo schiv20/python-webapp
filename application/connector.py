@@ -17,7 +17,6 @@ class Connector():
 
     def hash_password(self, password):
         hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        #hashed = generate_password_hash(password)
         return hashed
 
     def add_user(self, email, password):
@@ -25,3 +24,15 @@ class Connector():
         print("Printing connector: ")
         print(email, password)
         da.create_user(email, self.hash_password(password))
+
+    def get_user_by_email(self, email):
+        da = DataAccess()
+        row = da.get_user_by_email(email)
+        return row
+
+    def verify_user_by_password(self, email, password):
+        da = DataAccess()
+        return da.verify_user(email, password)
+
+
+
