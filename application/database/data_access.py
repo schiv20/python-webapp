@@ -60,6 +60,6 @@ class DataAccess:
                 print(stored_hash)
                 # bcrypt expects bytes
                 return bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8"))
-        finally:
-            self.conn.close()
+        except pymysql.err.OperationalError:
+            print("User does not exist")
 

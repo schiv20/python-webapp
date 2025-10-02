@@ -7,6 +7,44 @@ import random
 from application import app
 from application.connector import Connector
 
+TOKEN_COOKIE_NAME = "access_token"
+COOKIE_MAX_AGE = 3600  # 1 hour
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = _get_token_from_request()
+        if not token:
+            if request.is_json:  # API call
+                return jsonify({"error": "Token is missing"}), 401
+            else:  # Browser navigation
+                return redirect(url_for("login_page"))
+
+        try:
+            jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            if request.is_json:
+                return jsonify({"error": "Token expired"}), 401
+            else:
+                flash("Your session has expired. Please log in again.", "warning")
+                return redirect(url_for("login_page"))
+        except jwt.InvalidTokenError:
+            if request.is_json:
+                return jsonify({"error": "Invalid token"}), 401
+            else:
+                flash("Invalid session. Please log in.", "danger")
+                return redirect(url_for("login_page"))
+
+        return f(*args, **kwargs)
+    return decorated
+
+
+def _get_token_from_request():
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth.split(" ", 1)[1]
+    return request.cookies.get(TOKEN_COOKIE_NAME)
+
 @app.route('/')
 @app.route('/home')
 def home():
@@ -19,6 +57,7 @@ def welcome(name='Team'):
 
 
 @app.route('/joke')
+@token_required
 def joke():
     ca  = Connector()
     joke = ca.extract_joke()
@@ -45,22 +84,6 @@ def register():
 def login_page():
     return render_template('login.html', title='Login')
 
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = _get_token_from_request()
-        if not token:
-            return jsonify({"error": "Token is missing"}), 401
-        try:
-            jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
-        except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Token expired"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"error": "Invalid token"}), 401
-        return f(*args, **kwargs)
-    return decorated
-
-
 def generate_token(username: str):
     payload = {
         "sub": username,
@@ -86,27 +109,21 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
     token = generate_token(email)
-    resp = redirect(url_for("home"))  # optional: still return in JSON
+    if request.is_json:
+        resp = jsonify({"token": token})
+    else:
+        resp = redirect(url_for("home"))
+
     resp.set_cookie(
         TOKEN_COOKIE_NAME,
         token,
         httponly=True,
-        secure=current_app.config.get("COOKIE_SECURE", False),  # True in prod (HTTPS)
+        secure=current_app.config.get("COOKIE_SECURE", False),
         samesite=current_app.config.get("COOKIE_SAMESITE", "Lax"),
         max_age=COOKIE_MAX_AGE,
         path="/",
     )
-    return resp, 200
-
-
-TOKEN_COOKIE_NAME = "access_token"
-COOKIE_MAX_AGE = 3600  # 1 hour
-
-def _get_token_from_request():
-    # auth = request.headers.get("Authorization", "")
-    # if auth.startswith("Bearer "):
-    #     return auth.split(" ", 1)[1]
-    return request.cookies.get(TOKEN_COOKIE_NAME)
+    return resp
 
 
 @app.route("/admin")
@@ -117,6 +134,6 @@ def admin():
 @app.route("/logout")
 @token_required
 def logout():
-    resp = redirect(url_for("home"))
+    resp = redirect(url_for("login_page"))
     resp.delete_cookie(TOKEN_COOKIE_NAME, path="/")
-    return resp, 200
+    return resp
