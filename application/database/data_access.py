@@ -31,3 +31,11 @@ class DataAccess:
             cursor.execute("SELECT the_joke, punchline FROM joke WHERE ID = %s", (random_joke,))
             return cursor.fetchone()
 
+    def create_user(self, email, password):
+        with self.conn.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO user (Email, Password) VALUES (%s, %s)",
+                (email, password)
+            )
+            self.conn.commit()
+
