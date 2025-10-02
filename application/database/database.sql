@@ -1,4 +1,5 @@
-DROP DATABASE IF EXISTS jokeapp;
+Terminal close -- exit!
+jokeapp;
 
 CREATE DATABASE jokeapp;
 USE jokeapp;

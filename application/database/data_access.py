@@ -31,7 +31,3 @@ class DataAccess:
             cursor.execute("SELECT the_joke, punchline FROM joke WHERE ID = %s", (random_joke,))
             return cursor.fetchone()
 
-if __name__ == "__main__":
-    da = DataAccess()
-    row = da.get_joke()
-    print(row)
