@@ -1,6 +1,7 @@
 from flask import render_template
 import random
 from application import app
+from application.connector import Connector
 
 
 @app.route('/')
@@ -16,10 +17,10 @@ def welcome(name='Team'):
 
 @app.route('/joke')
 def joke():
-    joke_number = random.randrange(len(joke_dict))
-    joke_question = joke_dict[joke_number][0]
-    joke_answer = joke_dict[joke_number][1]
-    return render_template('joke.html', title="Joke Time", joke_question=joke_question, joke_answer=joke_answer, number_of_jokes=len(joke_dict))
+    ca  = Connector()
+    joke = ca.extract_joke()
+    num_of_jokes = ca.extract_num_of_jokes()
+    return render_template('joke.html', title="Joke Time", joke_question=joke[0], joke_answer=joke[1], number_of_jokes=num_of_jokes)
 
 
 joke_dict = {0: ["Why was Cinderella so bad a football?", "She kept running away from the ball!"],
